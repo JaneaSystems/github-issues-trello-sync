@@ -1,0 +1,10 @@
+{
+  "name": "github-issues-trello-sync",
+  "version": "0.0.0",
+  "description": "github-issues-trello-sync",
+  "main": "app.js",
+  "author": {
+    "name": "Administrator",
+    "email": ""
+  }
+}
