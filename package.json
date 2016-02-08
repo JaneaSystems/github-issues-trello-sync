@@ -6,5 +6,17 @@
   "author": {
     "name": "Administrator",
     "email": ""
+  },
+  "dependencies": {
+    "bluebird": "^2.9.25",
+    "coffee-script": "^1.9.2",
+    "commander": "^2.8.1",
+    "github": "^0.2.4",
+    "node-trello": "^1.1.1",
+    "prettyjson": "^1.1.0",
+    "promise-queue": "^2.1.1"
+  },
+  "devDependencies": {
+    "jsonfile": "^2.0.0"
   }
 }
