@@ -81,7 +81,7 @@ totalIssuesOnTrello = 1000000
 totalIssuesToCreate = 1000000
 
 allCardsP = trello.getCardsOnBoard program.trelloBoard
-.then (cards) -> labelsP.then (trelloLabels) ->
+.then (cards) -> labelsP.then (trelloLabels) -> inboxListIdP.then (inboxListId) ->
   totalIssuesOnTrello = cards.length
   trelloItems = []
   for card in cards
@@ -89,7 +89,7 @@ allCardsP = trello.getCardsOnBoard program.trelloBoard
     number = textgen.numberFromDesc(program.githubUser, program.githubRepo)(card.desc)
     card.desc = textgen.normalize(card.desc)
     labels = (trelloLabels.idToName[idLabel] for idLabel in card.idLabels)
-    trelloItems.push { number: number, card: card, labels: labels } if number
+    trelloItems.push { number: number, card: card, labels: labels, inbox: (card.idList is inboxListId) } if number
   trelloItems
 .map (trelloItem) ->
   trello.getCommentsOnCard trelloItem.card.id
@@ -146,6 +146,9 @@ checkIssuesP = fullDownloadP
     issue.newComments = newComments if newComments.length
     newLabels = (label for label in issue.parsed.labels when label not in issue.trello.labels)
     issue.newLabels = newLabels if newLabels.length
+    # Possible archive
+    if issue.trello.inbox and issue.github.issue.state is 'closed'
+      issue.archive = true
   else
     # New issue
     if issue.parsed.labels.length or not keywords.length
@@ -176,6 +179,11 @@ checkIssuesP = fullDownloadP
       console.log "  - Updated description:"
       console.log issue.parsed.desc.replace /^/mg, '      '
     console.log ''
+  console.log ''
+  console.log ''
+  console.log '========== CLOSED INBOX ISSUES =========='
+  for issue in issues when issue.archive
+    console.log "#{issue.parsed.title}"
   console.log ''
   console.log ''
 
@@ -227,4 +235,7 @@ if program.commit
         queue.add -> labelsP.then (trelloLabels) ->
           console.log "Adding new label \"#{newLabel}\" to issue \"#{issue.trello.card.name}\""
           trello.addLabelToCardAsync issue.trello.card.id, trelloLabels.nameToId[newLabel]
+    if issue.archive
+      console.log "Archiving card \"#{issue.trello.card.name}\""
+      trello.archiveCardAsync issue.trello.card.id
     return null

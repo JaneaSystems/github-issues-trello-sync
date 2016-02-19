@@ -20,7 +20,7 @@ exports.getCardsOnBoard = (boardId) ->
     console.log "Downloading all cards on board #{boardId}..."
     trello.getAsync '/1/boards/' + boardId + '/cards',
       limit: 1000
-      fields: 'desc,name,shortUrl,idLabels'
+      fields: 'desc,name,shortUrl,idLabels,idList'
 
 # [{ id:'', color:'', name:'' }]
 exports.getLabelsOnBoard = (boardId) ->
@@ -85,6 +85,14 @@ exports.updateCardDescriptionAsync = (cardId, desc) ->
     #console.log "Updating description of card #{cardId}..."
     trello.putAsync '/1/cards/' + cardId + '/desc',
       value: desc
+
+# @return [?]
+exports.archiveCardAsync = (cardId) ->
+  delays = delays.delay(trelloRateDelay)
+  delays.then ->
+    #console.log "Archiving card #{cardId}..."
+    trello.putAsync '/1/cards/' + cardId + '/closed',
+      value: true
 
 # @return [list of lists]
 exports.getListsOnBoardAsync = (boardId) ->
