@@ -1,5 +1,8 @@
 ﻿exports.normalize = (s) -> s.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 
+# truncateLength = 10000 # Avoid errors in trello
+truncateLength = 800 # Avoid collapsing in trello
+
 parseTitle = (issue, user, repo) ->
   #"[#{user}/#{repo}: \##{issue.number}] #{issue.title}"
   #"[#{repo}] #{issue.title} (\##{issue.number})"
@@ -18,8 +21,8 @@ parseDesc = (issue) ->
          "\n" +
          "---\n" +
          exports.normalize(issue.body)
-  if desc.length > 10000
-    desc = desc[0...10000] + "\n\n---\nTRUNCATED"
+  if desc.length > truncateLength
+    desc = desc[0...truncateLength] + "\n\n---\nTRUNCATED"
   desc
 
 parseIssue = (issue, user, repo) ->
@@ -31,8 +34,8 @@ parseComment = (comment) ->
         "\n" +
         "---\n" +
         exports.normalize(comment.body)
-  if ret.length > 10000
-    ret = ret[0...10000] + "\n\n---\nTRUNCATED"
+  if ret.length > truncateLength
+    ret = ret[0...truncateLength] + "\n\n---\nTRUNCATED"
   ret
 
 parseComments = (comments) -> comments.map parseComment
@@ -81,4 +84,4 @@ exports.parseFullIssue = (user, repo, labels, warnKeywords) -> (issue) ->
   ret.comments = parseComments issue.comments
   ret.labels = parseLabels issue, labels
   ret.mentions = parseMentions issue, warnKeywords
-  ret  
+  ret
