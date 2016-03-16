@@ -57,7 +57,8 @@ inboxListIdP = trello.findListIdAsync 'Inbox', program.trelloBoard
 
 labelsP = trello.getLabelsOnBoard program.trelloBoard
 .then (labels) ->
-  missingLabels = (keyword for keyword in keywords when not labels.some((label) -> label.name is keyword))
+  expectedLabels = keywords.concat ['CLOSED']
+  missingLabels = (keyword for keyword in expectedLabels when not labels.some((label) -> label.name is keyword))
   Promise.map missingLabels, (missingLabel) ->
     # TODO: Should respect program.commit
     console.log "Adding missing label #{missingLabel}..."
@@ -146,9 +147,14 @@ checkIssuesP = fullDownloadP
     issue.newComments = newComments if newComments.length
     newLabels = (label for label in issue.parsed.labels when label not in issue.trello.labels)
     issue.newLabels = newLabels if newLabels.length
-    # Possible archive
-    if issue.trello.inbox and issue.github.issue.state is 'closed'
-      issue.archive = true
+    # Possible closed and archive
+    if issue.github.issue.state is 'closed'
+      if 'CLOSED' not in issue.trello.labels
+        if issue.newLabels
+          issue.newLabels.push 'CLOSED'
+        else
+          issue.newLabels = ['CLOSED']
+      issue.archive = true if issue.trello.inbox
   else
     # New issue
     if issue.parsed.labels.length or not keywords.length
