@@ -1,4 +1,8 @@
-﻿exports.normalize = (s) -> s.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+﻿exports.normalize = (s) ->
+  s.replace(/\r\n/g, '\n')
+   .replace(/\r/g, '\n')
+   .replace(/<!--[\s\S]*?-->\n*/gm, '')
+   .trim()
 
 # truncateLength = 10000 # Avoid errors in trello
 truncateLength = 800 # Avoid collapsing in trello
@@ -41,7 +45,8 @@ parseComment = (comment) ->
 parseComments = (comments) -> comments.map parseComment
 
 parseLabels = (issue, labels) ->
-  issueText = JSON.stringify(issue).toUpperCase()
+  issueText = exports.normalize(JSON.stringify(issue))
+    .toUpperCase()
   label for label in labels when issueText.indexOf(label.toUpperCase()) > -1
 
 parseMentions = (issue, labels) ->
