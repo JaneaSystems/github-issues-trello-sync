@@ -22,47 +22,58 @@ exports.auth = (token) ->
 
 
 
-getAllPages = (func, arg, filterFunc = (->true), acc = [], pageNumber = 1) ->
+apiCall = (log, func, arg, retriesLeft = 10) ->
   delays = delays.delay(githubRateDelay)
   delays.then ->
-    console.log 'Getting page ' + pageNumber + '...'
-    arg['per_page'] = 100
-    arg['page'] = pageNumber
+    console.log log
+    if retriesLeft is 0
+      console.log "Exausted retries."
+      process.abort()
     auth() if auth?
     func(arg)
-    .then (res) ->
-      res = res.filter filterFunc
-      console.log 'Received page ' + pageNumber + ' containing ' + res.length + ' items.'
-      # Single page for debug
-      # return res;
-      res.forEach (v) -> acc.push v
-      if res.length is 0 or res.length < 100
-        console.log 'Done getting pages. Received ' + acc.length + ' items.'
-        acc
-      else
-        getAllPages func, arg, filterFunc, acc, pageNumber + 1
+  .catch (e) ->
+    if e.code is '504'
+      console.log '504 error found, will retry'
+      apiCall log, func, arg, (retriesLeft - 1)
+    else
+      console.log e
+      process.abort()
+
+
+
+getAllPages = (func, arg, filterFunc = (->true), acc = [], pageNumber = 1) ->
+  arg['per_page'] = 100
+  arg['page'] = pageNumber
+  apiCall "Getting page #{pageNumber} ...", func, arg
+  .then (res) ->
+    res = res.filter filterFunc
+    console.log 'Received page ' + pageNumber + ' containing ' + res.length + ' items.'
+    # Single page for debug
+    # return res;
+    res.forEach (v) -> acc.push v
+    if res.length is 0 or res.length < 100
+      console.log 'Done getting pages. Received ' + acc.length + ' items.'
+      acc
+    else
+      getAllPages func, arg, filterFunc, acc, pageNumber + 1
 
 
 
 exports.getIssueAndCommentsAsync = (githubUser, githubRepo, issueNumber) ->
-  delays = delays.delay(githubRateDelay)
-  delays.then ->
-    console.log "Downloading issue #{issueNumber}..."
-    auth() if auth?
-    github.issues.getRepoIssueAsync
+  apiCall "Downloading issue #{issueNumber}...", github.issues.getRepoIssueAsync,
+    user: githubUser
+    repo: githubRepo
+    number: issueNumber
+  .then (issue) ->
+    console.log "Downloading comments for issue #{issueNumber}..."
+    getAllPages github.issues.getCommentsAsync,
       user: githubUser
       repo: githubRepo
-      number: issueNumber
-    .then (issue) ->
-      console.log "Downloading comments for issue #{issueNumber}..."
-      getAllPages github.issues.getCommentsAsync,
-        user: githubUser
-        repo: githubRepo
-        number: issue.number
-      .then (comments) ->
-        console.log "Downloaded #{comments.length} comments for issue #{issue.number}."
-        issue: issue
-        comments: comments
+      number: issue.number
+    .then (comments) ->
+      console.log "Downloaded #{comments.length} comments for issue #{issue.number}."
+      issue: issue
+      comments: comments
 
 
 
