@@ -13,30 +13,45 @@ exports.auth = (key, token) ->
 
 
 
+apiCall = (log, ifunc, arg0, arg1 = {}, retriesLeft = 10) ->
+  func = ifunc.bind trello
+  delays = delays.delay trelloRateDelay
+  delays.then ->
+    console.log log
+    if retriesLeft is 0
+      console.log 'Exausted retries.'
+      process.abort()
+    func arg0, arg1
+  .catch (e) ->
+    console.log log
+    if e.code is '504'
+      console.log '504 error found, will retry'
+      apiCall log, func, arg0, arg1, (retriesLeft - 1)
+    else
+      console.log e
+      console.log e.stack
+      process.abort()
+
+
+
 # [{ id:'', desc:'', name:'', shortUrl:'' }]
 exports.getCardsOnBoard = (boardId) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    console.log "Downloading all cards on board #{boardId}..."
-    trello.getAsync '/1/boards/' + boardId + '/cards',
+  apiCall "Downloading all cards on board #{boardId}...",
+    trello.getAsync, '/1/boards/' + boardId + '/cards',
       limit: 1000
       fields: 'desc,name,shortUrl,idLabels,idList'
 
 # [{ id:'', color:'', name:'' }]
 exports.getLabelsOnBoard = (boardId) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    console.log "Downloading all labels on board #{boardId}..."
-    trello.getAsync '/1/boards/' + boardId + '/labels',
+  apiCall "Downloading all labels on board #{boardId}...",
+    trello.getAsync, '/1/boards/' + boardId + '/labels',
       limit: 1000
       fields: 'color,name'
 
 # [ { id:'', data:{ text:'' } } ]
 exports.getCommentsOnCard = (cardId) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    console.log "Downloading all comments on card #{cardId}..."
-    trello.getAsync '/1/cards/' + cardId + '/actions',
+  apiCall "Downloading all comments on card #{cardId}...",
+    trello.getAsync, '/1/cards/' + cardId + '/actions',
       filter: 'commentCard'
       fields: 'data,idMemberCreator'
       limit: 1000
@@ -44,10 +59,8 @@ exports.getCommentsOnCard = (cardId) ->
 
 # @return [card]
 exports.addCardAsync = (listId, title, desc = '') ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    #console.log "Adding card \"#{title}\" to list #{listId}..."
-    trello.postAsync '/1/cards',
+  apiCall "Adding card \"#{title}\" to list #{listId}...",
+    trello.postAsync, '/1/cards',
       name: title
       idList: listId
       desc: desc
@@ -55,73 +68,55 @@ exports.addCardAsync = (listId, title, desc = '') ->
 
 # @return [label]
 exports.addLabelToBoardAsync = (boardId, name) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    #console.log "Adding label #{name} to board #{boardId}..."
-    trello.postAsync '/1/boards/' + boardId + '/labels',
+  apiCall "Adding label #{name} to board #{boardId}...",
+    trello.postAsync, '/1/boards/' + boardId + '/labels',
       name: name
       color: 'red'
 
 # @return [commentCard]
 exports.addCommentToCardAsync = (cardId, comment) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    #console.log "Adding comment to card #{cardId}..."
-    trello.postAsync '/1/cards/' + cardId + '/actions/comments',
+  apiCall "Adding comment to card #{cardId}...",
+    trello.postAsync, '/1/cards/' + cardId + '/actions/comments',
       text: comment
 
 # @return [?]
 exports.addLabelToCardAsync = (cardId, labelId) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    #console.log "Adding label to card #{cardId}..."
-    trello.postAsync '/1/cards/' + cardId + '/idLabels',
+  apiCall "Adding label to card #{cardId}...",
+    trello.postAsync, '/1/cards/' + cardId + '/idLabels',
       value: labelId
 
 # @return [card]
 exports.updateCardDescriptionAsync = (cardId, desc) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    #console.log "Updating description of card #{cardId}..."
-    trello.putAsync '/1/cards/' + cardId + '/desc',
+  apiCall "Updating description of card #{cardId}...",
+    trello.putAsync, '/1/cards/' + cardId + '/desc',
       value: desc
 
 # @return [?]
 exports.archiveCardAsync = (cardId) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then ->
-    #console.log "Archiving card #{cardId}..."
-    trello.putAsync '/1/cards/' + cardId + '/closed',
+  apiCall "Archiving card #{cardId}...",
+    trello.putAsync, '/1/cards/' + cardId + '/closed',
       value: true
 
 # @return [list of lists]
 exports.getListsOnBoardAsync = (boardId) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    console.log "Downloading information about lists on board #{boardId}..."
-    trello.getAsync '/1/boards/' + boardId + '/lists'
+  apiCall "Downloading information about lists on board #{boardId}...",
+    trello.getAsync, '/1/boards/' + boardId + '/lists'
 
 ###
 # @return [list of cards]
 exports.getCardsOnList = (listId) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    console.log "Downloading all cards on list #{listId}..."
-    trello.getAsync '/1/lists/' + listId + '/cards'
+  apiCall "Downloading all cards on list #{listId}...",
+    trello.getAsync, '/1/lists/' + listId + '/cards'
 
 # @return[card]
 exports.getCard = (boardId, cardId) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    console.log "Downloading card #{cardId} on board #{boardId}..."
-    trello.getAsync '/1/boards/' + boardId + '/cards/' + cardId
+  apiCall "Downloading card #{cardId} on board #{boardId}...",
+    trello.getAsync, '/1/boards/' + boardId + '/cards/' + cardId
 ###
 
 exports.deleteCommentAsync = (commentId) ->
-  delays = delays.delay(trelloRateDelay)
-  delays.then -> 
-    console.log "Deletting comment #{commentId}..."
-    trello.delAsync '/1/actions/' + commentId
+  apiCall "Deletting comment #{commentId}...",
+    trello.delAsync, '/1/actions/' + commentId
 
 
 exports.findListIdAsync = (listName, boardId) ->
