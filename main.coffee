@@ -80,6 +80,7 @@ labelsP = trello.getLabelsOnBoard program.trelloBoard
 # Make sure we break if this is not set
 totalIssuesOnTrello = 1000000
 totalIssuesToCreate = 1000000
+maxCards = 900
 
 allCardsP = trello.getCardsOnBoard program.trelloBoard
 .then (cards) -> labelsP.then (trelloLabels) -> inboxListIdP.then (inboxListId) ->
@@ -165,8 +166,8 @@ checkIssuesP = fullDownloadP
   console.log ''
   console.log "Total number of cards currently on Trello: #{totalIssuesOnTrello}"
   console.log "Number of cards to create now: #{totalIssuesToCreate}"
-  if (totalIssuesOnTrello + totalIssuesToCreate) > 900
-    throw 'Creating more issues will break the Trello API. A workaround must be found and implemented.'
+  if (totalIssuesOnTrello + totalIssuesToCreate) > maxCards
+    console.log 'ERROR: Creating more issues will break the Trello API. A workaround must be found and implemented.'
   console.log ''
   console.log ''
   console.log '========== NEW ISSUES =========='
@@ -211,7 +212,10 @@ if program.commit
   .tap (issues) ->
     queue.add ->
       Promise.reduce issues, (_, issue) ->
-        if issue.create
+        if (totalIssuesOnTrello + totalIssuesToCreate) > maxCards
+          console.log 'Creating more issues will break the Trello API. A workaround must be found and implemented.'
+          return null
+        else if issue.create
           inboxListIdP
           .then (inboxListId) ->
             console.log "Adding issue \"#{issue.parsed.title}\""
