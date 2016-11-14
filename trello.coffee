@@ -41,6 +41,13 @@ exports.getCardsOnBoard = (boardId) ->
       limit: 1000
       fields: 'desc,name,shortUrl,idLabels,idList'
 
+# [{ id:'', desc:'', name:'', shortUrl:'' }]
+exports.getCardsOnList = (listId) ->
+  apiCall "Downloading all cards on list #{listId}...",
+    trello.getAsync, '/1/lists/' + listId + '/cards',
+      limit: 1000
+      fields: 'desc,name,shortUrl,idLabels,idList'
+
 # [{ id:'', color:'', name:'' }]
 exports.getLabelsOnBoard = (boardId) ->
   apiCall "Downloading all labels on board #{boardId}...",
@@ -90,6 +97,15 @@ exports.updateCardDescriptionAsync = (cardId, desc) ->
   apiCall "Updating description of card #{cardId}...",
     trello.putAsync, '/1/cards/' + cardId + '/desc',
       value: desc
+
+# @return [card]
+exports.moveCardToListAsync = (cardId, listId, pos = 'top') ->
+  apiCall "Moving card #{cardId} to list #{listId}...",
+    trello.putAsync, '/1/cards/' + cardId + '/idList',
+      value: listId
+  .then () -> apiCall "Setting card #{cardId} to position #{pos}...",
+    trello.putAsync, '/1/cards/' + cardId + '/pos',
+      value: pos
 
 # @return [?]
 exports.archiveCardAsync = (cardId) ->
