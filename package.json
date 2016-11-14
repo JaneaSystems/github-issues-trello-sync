@@ -8,13 +8,17 @@
     "email": ""
   },
   "dependencies": {
-    "bluebird": "^2.9.25",
+    "bluebird": "^3.4.1",
     "coffee-script": "^1.9.2",
     "commander": "^2.8.1",
     "github": "^0.2.4",
+    "inquirer": "^1.2.2",
+    "lodash": "^4.15.0",
+    "marked": "^0.3.6",
     "node-trello": "^1.1.1",
     "prettyjson": "^1.1.0",
-    "promise-queue": "^2.1.1"
+    "promise-queue": "^2.1.1",
+    "vso-node-api": "^4.0.0"
   },
   "devDependencies": {
     "jsonfile": "^2.0.0"
