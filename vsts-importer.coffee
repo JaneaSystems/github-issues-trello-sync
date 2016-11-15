@@ -15,6 +15,7 @@ vsts = require './vsts.coffee'
 
 program
   .version packageJson.version
+  .option '-n, --dry-run', 'Do a dry-run'
   .option '-i, --vsts-instance <name>', 'VSTS instance name'
   .option '-p, --vsts-project <name>', 'VSTS project name'
   .option '-u, --vsts-user <user>', 'VSTS user name'
@@ -65,25 +66,64 @@ listsP = trello.getListsOnBoardAsync program.trelloBoard
     process.abort()
 
 
+stories = null
+priorities = [{ name: 'No Priority', value: null }, { name: 'P0', value: '0' }, { name: 'P1', value: '1' }, { name: 'P2', value: '2' }, { name: 'P3', value: '3' }]
+
+storiesP = vsts.runWiql "select [System.Id] from Workitems where [System.AreaPath] = '#{program.areaPath}' and [System.WorkItemType] = 'User Story' and [System.State] <> 'Cut'"
+.then vsts.getWorkItemsAsync
+.then (workitems) -> stories = [{ name: 'No User Story', value: null }].concat ({ name: wi.fields["System.Title"], value: wi._links.self.href } for wi in workitems)
+
+
 importRound = () ->
   trello.getCardsOnList importFromListId
   .each (card) ->
-    vsts.createWorkItem 'Task', [
-      'op': 'add'
-      'path': '/fields/System.AreaPath'
-      'value': program.areaPath
+    console.log()
+    console.log "Importing: #{card.name}"
+    bodyP = Promise.resolve inquirer.prompt [
+      type: 'list'
+      name: 'userstory'
+      message: 'Add a Parent Link to User Story?'
+      choices: stories
     ,
-      'op': 'add'
-      'path': '/fields/System.Title'
-      'value': card.name
-    ,
-      'op': 'add'
-      'path': '/fields/System.Description'
-      'value': marked card.desc, { breaks: true }
+      type: 'list'
+      name: 'priority'
+      message: 'Assign a Priority?'
+      choices: priorities
     ]
-    .catch process.abort
-    .tap () -> trello.moveCardToListAsync card.id, moveToListId
-    .catch process.abort
+    .then (answers) ->
+      body = [
+        'op': 'add'
+        'path': '/fields/System.AreaPath'
+        'value': program.areaPath
+      ,
+        'op': 'add'
+        'path': '/fields/System.Title'
+        'value': card.name
+      ,
+        'op': 'add'
+        'path': '/fields/System.Description'
+        'value': marked card.desc, { breaks: true }
+      ]
+      if answers.userstory isnt null then body.push
+        'op': 'add'
+        'path': '/relations/-'
+        'value':
+          'rel': 'System.LinkTypes.Hierarchy-Reverse'
+          'url': answers.userstory
+      if answers.priority isnt null then body.push
+        'op': 'add'
+        'path': '/fields/Microsoft.VSTS.Common.Priority'
+        'value': answers.priority
+      body
+    .then (body) ->
+      if program.dryRun
+        console.log card.id
+        console.log body
+      else
+        vsts.createWorkItem 'Task', body 
+        .catch process.abort
+        .tap () -> trello.moveCardToListAsync card.id, moveToListId
+        .catch process.abort
 
 
-listsP.tap importRound
+listsP.tap storiesP.tap importRound
