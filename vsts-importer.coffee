@@ -103,6 +103,10 @@ importRound = () ->
         'op': 'add'
         'path': '/fields/System.Description'
         'value': marked card.desc, { breaks: true }
+      ,
+        'op': 'add'
+        'path': '/fields/Microsoft.VSTS.Common.Priority'
+        'value': (if answers.priority isnt null then answers.priority else '')
       ]
       if answers.userstory isnt null then body.push
         'op': 'add'
@@ -110,10 +114,6 @@ importRound = () ->
         'value':
           'rel': 'System.LinkTypes.Hierarchy-Reverse'
           'url': answers.userstory
-      if answers.priority isnt null then body.push
-        'op': 'add'
-        'path': '/fields/Microsoft.VSTS.Common.Priority'
-        'value': answers.priority
       body
     .then (body) ->
       if program.dryRun
