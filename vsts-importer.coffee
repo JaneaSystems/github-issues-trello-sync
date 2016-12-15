@@ -126,4 +126,4 @@ importRound = () ->
         .catch process.abort
 
 
-listsP.tap storiesP.tap importRound
+listsP.tap () -> storiesP.tap importRound
