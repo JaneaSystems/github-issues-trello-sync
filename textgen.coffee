@@ -8,13 +8,16 @@
 truncateLength = 800 # Avoid collapsing in trello
 
 parseTitle = (issue, user, repo) ->
+  type = if issue.hasOwnProperty 'pull_request' then 'PR' else 'I'
   #"[#{user}/#{repo}: \##{issue.number}] #{issue.title}"
   #"[#{repo}] #{issue.title} (\##{issue.number})"
-  "[#{user}/#{repo}] #{issue.title} (\##{issue.number})"
+  "[#{user}/#{repo}] #{issue.title} (#{type} \##{issue.number})"
 
-parseDesc = (issue) ->
+parseDesc = (issue, user, repo) ->
+  type = if issue.hasOwnProperty 'pull_request' then 'PR' else 'I'
   # The first line of description in trello is the identifier
-  desc = 'URL: ' + issue.html_url
+  desc = 'URL: ' + issue.html_url + '\n' +
+         "[#{user}/#{repo}] #{issue.title} ([#{type} \##{issue.number}](#{issue.html_url}))"
   if issue.state isnt 'open'
     desc = desc + '\n' +
            ":x: Issue closed by [#{issue.closed_by.login}](#{issue.closed_by.html_url}) on #{new Date(issue.closed_at).toDateString()}"
@@ -31,7 +34,7 @@ parseDesc = (issue) ->
 
 parseIssue = (issue, user, repo) ->
   title: parseTitle issue, user, repo
-  desc: parseDesc issue
+  desc: parseDesc issue, user, repo
 
 parseComment = (comment) ->
   ret = ":octocat: [#{comment.user.login}](#{comment.user.html_url}) on #{new Date(comment.updated_at).toDateString()}\n" +
