@@ -82,10 +82,18 @@ exports.getWorkItemsAsync = (queryResult) ->
   .then JSON.parse
   .then (qr) -> qr.workItems
   .map (wi) -> wi.id
+  .then (wis) ->
+    chunks = []
+    chunkSize = 195
+    for i in [0...wis.length] by chunkSize
+      chunks.push wis[i...i+chunkSize]
+    chunks
+  .map (chunk) -> chunk.join ','
   .map exports.getWorkItemById
   .map (res) -> res.body
   .map JSON.parse
-  .map (wi) -> wi.value[0]
+  .map (chunk) -> chunk.value
+  .then (chunks) -> [].concat chunks...
 
 exports.getWorkItemByTypeTitle = (type, title) ->
   vsts.runWiql "select [System.Id] from Workitems where [System.TeamProject] = @project and [System.WorkItemType] = 'Epic' and [System.Title] = 'Epic1'"
