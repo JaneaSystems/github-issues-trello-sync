@@ -18,7 +18,7 @@ parseDesc = (issue, user, repo) ->
   # The first line of description in trello is the identifier
   desc = 'URL: ' + issue.html_url + '\n' +
          "[#{user}/#{repo}] #{issue.title} ([#{type} \##{issue.number}](#{issue.html_url}))"
-  if issue.state isnt 'open'
+  if issue.closed_by and issue.closed_at
     desc = desc + '\n' +
            ":x: Issue closed by [#{issue.closed_by.login}](#{issue.closed_by.html_url}) on #{new Date(issue.closed_at).toDateString()}"
   desc = desc + '\n' +
