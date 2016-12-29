@@ -24,6 +24,7 @@ program
   .option '-k, --trello-key <key>', 'Trello key'
   .option '-t, --trello-token <token>', 'Trello auth token'
   .option '-b, --trello-board <id>', 'Trello board ID'
+  .option '-a, --archive-from-inbox', 'Archive cards for closed issues in inbox'
   .option '-p, --include-pull-requests', 'Include pull requests'
   .option '-f, --full-text', 'Reproduce full issue text on trello'
   .option '-n, --no-commit', 'Download and calculate modifications but do not write them to Trello'
@@ -245,7 +246,7 @@ if program.commit
         queue.add -> labelsP.then (trelloLabels) ->
           console.log "Adding new label \"#{newLabel}\" to issue \"#{issue.trello.card.name}\""
           trello.addLabelToCardAsync issue.trello.card.id, trelloLabels.nameToId[newLabel]
-    if issue.archive
+    if issue.archive and program.archiveFromInbox
       console.log "Archiving card \"#{issue.trello.card.name}\""
       trello.archiveCardAsync issue.trello.card.id
     return null
