@@ -51,6 +51,7 @@ parseComments = (comments) -> comments.map parseComment
 parseLabels = (issue, labels) ->
   issueText = exports.normalize(JSON.stringify(issue))
     .replace('`vcbuild test nosign` (Windows)', '-')
+    .replace('`vcbuild test` (Windows)', '-')
     .toUpperCase()
   label for label in labels when issueText.indexOf(label.toUpperCase()) > -1
 
