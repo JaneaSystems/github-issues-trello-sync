@@ -124,6 +124,17 @@ importRound = () ->
         .catch process.abort
         .tap () -> trello.moveCardToListAsync card.id, moveToListId
         .catch process.abort
+  .then () ->
+    console.log()
+    continueP = Promise.resolve inquirer.prompt [
+      type: 'list'
+      name: 'again'
+      message: 'Run the importer again?'
+      choices: ['Yes', 'No']
+    ]
+    .then (answer) ->
+      if answer.again is 'Yes'
+        importRound()
 
 
 listsP.tap () -> storiesP.tap importRound
