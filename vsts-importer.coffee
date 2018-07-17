@@ -7,6 +7,7 @@ prettyjson = require 'prettyjson'
 _ = require 'lodash'
 marked = require 'marked'
 inquirer = require 'inquirer'
+fs = require 'fs'
 
 require 'coffee-script/register'
 trello = require './trello.coffee'
@@ -26,6 +27,7 @@ program
   .option '-a, --area-path <path>', 'VSTS Area Path to use'
   .option '-f, --list-from <name>', 'Source list in Trello'
   .option '-d, --list-dest <name>', 'Move-to list in Trello'
+  .option '-l, --import-log <file_name>', 'Create an import log'
   .parse process.argv
 
 if not program.vstsInstance or
@@ -90,6 +92,11 @@ importRound = () ->
       message: 'Assign a Priority?'
       choices: priorities
     ]
+    .tap (answers) ->
+      if program.importLog
+        line = ((card.desc.split /[\r\n]+/)[1] || "ERROR: NO SECOND LINE IN DESCRIPTION").replace /`/g, ''
+        priority = if answers.priority isnt null then "Triaged P#{answers.priority}." else ''
+        fs.appendFileSync program.importLog, "#{line}\n() #{priority}\n\n"
     .then (answers) ->
       body = [
         'op': 'add'
