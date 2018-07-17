@@ -30,7 +30,7 @@ parseDesc = (issue, user, repo) ->
          exports.normalize(issue.body)
   if desc.length > truncateLength
     desc = desc[0...truncateLength] + "\n\n---\nTRUNCATED"
-  desc
+  desc.trim()
 
 parseIssue = (issue, user, repo) ->
   title: parseTitle issue, user, repo
