@@ -52,6 +52,7 @@ parseLabels = (issue, labels) ->
   issueText = exports.normalize(JSON.stringify(issue))
     .replace('`vcbuild test nosign` (Windows)', '-')
     .replace('`vcbuild test` (Windows)', '-')
+    .replace(/"node_id":"/g, '"-_id":"')
     .toUpperCase()
   label for label in labels when issueText.indexOf(label.toUpperCase()) > -1
 
