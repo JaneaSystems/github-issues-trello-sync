@@ -36,4 +36,4 @@ vsts.auth program.vstsInstance, program.vstsProject, 'Basic ' + (Buffer.from "#{
 
 storiesP = vsts.runWiql "select [System.Id] from Workitems where [System.AreaPath] = '#{program.areaPath}'"
 .then vsts.getWorkItemsAsync
-.tap (workitems) -> require('jsonfile').writeFileSync 'backup.json', workitems
+.tap (workitems) -> require('jsonfile').writeFileSync 'backup.json', workitems, { spaces: 2 }
