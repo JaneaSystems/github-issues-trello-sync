@@ -16,12 +16,13 @@ parseTitle = (issue, user, repo) ->
 parseDesc = (issue, user, repo) ->
   type = if issue.hasOwnProperty 'pull_request' then 'PR' else 'I'
   # The first line of description in trello is the identifier
-  desc = 'URL: ' + issue.html_url + '\n' +
-         "`**[#{user}/#{repo}] #{issue.title} ([#{type} \##{issue.number}](#{issue.html_url}))**  `"
+  desc = "URL: #{issue.html_url}\n"
+  # The second line is formatted to copy-paste to markdown
+  cleantitle = issue.title.replace(/`/g, '\'')
+  desc = desc + "`**[#{user}/#{repo}] #{cleantitle} ([#{type} \##{issue.number}](#{issue.html_url}))**  `\n"
   if issue.closed_by and issue.closed_at
-    desc = desc + '\n' +
-           ":x: Issue closed by [#{issue.closed_by.login}](#{issue.closed_by.html_url}) on #{new Date(issue.closed_at).toDateString()}"
-  desc = desc + '\n' +
+    desc = desc + ":x: Issue closed by [#{issue.closed_by.login}](#{issue.closed_by.html_url}) on #{new Date(issue.closed_at).toDateString()}\n"
+  desc = desc +
          "Created on: #{new Date(issue.created_at).toDateString()}\n" +
          "Created by: [#{issue.user.login}](#{issue.user.html_url})\n" +
          "Labels: #{(label.name for label in issue.labels).join(' ')}\n" +
