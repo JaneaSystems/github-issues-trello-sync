@@ -126,6 +126,8 @@ fullDownloadP = Promise.resolve {}
     github.getIssueAndCommentsAsync program.githubUser, program.githubRepo, number
     .then (githubItem) ->
       data[number].github = githubItem
+    .catch () ->
+      data[number].github = { issueNotFound: true }
   .then -> data
 .then (data) -> (info for number, info of data)
 .then (res) -> require('jsonfile').writeFileSync 'cache_fullDownloadP.json', res ; res
@@ -135,6 +137,9 @@ fullDownloadP = Promise.resolve {}
 
 checkIssuesP = fullDownloadP
 .tap -> totalIssuesToCreate = 0
+.tap (issues) -> console.log "Before filtering not found issues: #{issues.length}"
+.filter (issue) -> !issue.github.issueNotFound
+.tap (issues) -> console.log "After filtering not found issues: #{issues.length}"
 .each (issue) ->
   issue.parsed = textgen.parseFullIssue(program.githubUser, program.githubRepo, keywords, program.warn)(issue.github)
   if issue.trello
@@ -150,7 +155,7 @@ checkIssuesP = fullDownloadP
     newLabels = (label for label in issue.parsed.labels when label not in issue.trello.labels)
     issue.newLabels = newLabels if newLabels.length
     # Possible closed and archive
-    if issue.github.issue.state is 'closed'
+    if issue.github.issue?.state is 'closed'
       if 'CLOSED' not in issue.trello.labels
         if issue.newLabels
           issue.newLabels.push 'CLOSED'

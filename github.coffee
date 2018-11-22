@@ -32,9 +32,11 @@ apiCall = (log, func, arg, retriesLeft = 10) ->
     auth() if auth?
     func(arg)
   .catch (e) ->
-    if e.code is '504'
+    if e.code is '504' or e.code is 504
       console.log '504 error found, will retry'
       apiCall log, func, arg, (retriesLeft - 1)
+    else if e.code is '404' or e.code is 404
+      throw e
     else
       console.log e
       process.abort()
@@ -65,6 +67,10 @@ exports.getIssueAndCommentsAsync = (githubUser, githubRepo, issueNumber) ->
     repo: githubRepo
     number: issueNumber
   .then (issue) ->
+    if issue.meta?.status isnt '200 OK'
+      console.log "issue #{issueNumber} issue.meta.status isnt '200 OK'"
+      console.log issue.meta
+      throw new Error()
     console.log "Downloading comments for issue #{issueNumber}..."
     getAllPages github.issues.getCommentsAsync,
       user: githubUser
