@@ -37,6 +37,8 @@ apiCall = (log, func, arg, retriesLeft = 10) ->
       apiCall log, func, arg, (retriesLeft - 1)
     else if e.code is '404' or e.code is 404
       throw e
+    else if e.code is '410' or e.code is 410
+      throw e
     else
       console.log e
       process.abort()

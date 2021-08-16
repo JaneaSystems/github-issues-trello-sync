@@ -28,7 +28,7 @@ parseDesc = (issue, user, repo) ->
          "Labels: #{(label.name for label in issue.labels).join(' ')}\n" +
          "\n" +
          "---\n" +
-         exports.normalize(issue.body)
+         exports.normalize(issue.body || "")
   if desc.length > truncateLength
     desc = desc[0...truncateLength] + "\n\n---\nTRUNCATED"
   desc.trim()
@@ -77,7 +77,7 @@ exports.numberFromDesc = (user, repo) -> (desc) ->
   return null unless lines.length >= 1
   info = lines[0].match ///^
     URL:\ https://github.com/#{user}/#{repo}/.*/([0-9]+)
-    $///
+    $///i
   return null unless info
   parseInt(info[1])
 
@@ -88,6 +88,12 @@ exports.parseFullIssue = (user, repo, labels, warnKeywords) -> (issue) ->
   if issue.issue.number isnt exports.numberFromDesc(user, repo)(ret.desc)
     console.log '===== DESC ====='
     console.log ret.desc
+    console.log '================'
+    console.log issue.issue
+    console.log '================'
+    console.log user
+    console.log repo
+    console.log exports.numberFromDesc(user, repo)(ret.desc)
     console.log '================'
     throw "ERROR: Number can't be extracted from parsed description"
   ret.comments = parseComments issue.comments
