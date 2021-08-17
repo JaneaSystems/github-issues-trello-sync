@@ -126,7 +126,8 @@ fullDownloadP = Promise.resolve {}
     github.getIssueAndCommentsAsync program.githubUser, program.githubRepo, number
     .then (githubItem) ->
       data[number].github = githubItem
-    .catch () ->
+    .catch (e) ->
+      console.log "ERROR GETTING ISSUE, marking as not found, received:", (JSON.stringify e, null, 2)
       data[number].github = { issueNotFound: true }
   .then -> data
 .then (data) -> (info for number, info of data)

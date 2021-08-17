@@ -1,83 +1,43 @@
 ﻿Promise = require 'bluebird'
-GitHubApi = require 'github'
+{ Octokit } = require 'octokit'
 
-
-
-auth = null
 githubRateDelay = 200
 delays = Promise.resolve()
-github = new GitHubApi
-  version: "3.0.0"
-  debug: true
-  protocol: "https"
-  host: "api.github.com"
-  timeout: 5000
-Promise.promisifyAll github.issues
 
+octokit = null
 exports.auth = (token) ->
-  auth = -> github.authenticate
-    type: 'oauth'
-    token: token
-  null
-
-
-
-apiCall = (log, func, arg, retriesLeft = 10) ->
-  delays = delays.delay(githubRateDelay)
-  delays.then ->
-    console.log log
-    if retriesLeft is 0
-      console.log "Exausted retries."
-      process.abort()
-    auth() if auth?
-    func(arg)
-  .catch (e) ->
-    if e.code is '504' or e.code is 504
-      console.log '504 error found, will retry'
-      apiCall log, func, arg, (retriesLeft - 1)
-    else if e.code is '404' or e.code is 404
-      throw e
-    else if e.code is '410' or e.code is 410
-      throw e
-    else
-      console.log e
-      process.abort()
-
-
-
-getAllPages = (func, arg, filterFunc = (->true), acc = [], pageNumber = 1) ->
-  arg['per_page'] = 100
-  arg['page'] = pageNumber
-  apiCall "Getting page #{pageNumber} ...", func, arg
-  .then (res) ->
-    res = res.filter filterFunc
-    console.log 'Received page ' + pageNumber + ' containing ' + res.length + ' items.'
-    # Single page for debug
-    # return res;
-    res.forEach (v) -> acc.push v
-    if res.length is 0 or res.length < 100
-      console.log 'Done getting pages. Received ' + acc.length + ' items.'
-      acc
-    else
-      getAllPages func, arg, filterFunc, acc, pageNumber + 1
+  octokit = new Octokit {auth: token}
+  octokit.rest.users.getAuthenticated()
+  .then (a) -> console.log 'GitHub Hello', (JSON.stringify a, null, 2)
+process.once 'beforeExit', (code) ->
+  octokit.rest.users.getAuthenticated()
+  .then (a) -> console.log 'GitHub Goodbye', (JSON.stringify a, null, 2)
 
 
 
 exports.getIssueAndCommentsAsync = (githubUser, githubRepo, issueNumber) ->
-  apiCall "Downloading issue #{issueNumber}...", github.issues.getRepoIssueAsync,
-    user: githubUser
+  delays = delays.delay(githubRateDelay)
+  delays.then -> Promise.resolve octokit.request 'GET /repos/{owner}/{repo}/issues/{issue_number}',
+    owner: githubUser
     repo: githubRepo
-    number: issueNumber
+    issue_number: issueNumber
   .then (issue) ->
-    if issue.meta?.status isnt '200 OK'
-      console.log "issue #{issueNumber} issue.meta.status isnt '200 OK'"
-      console.log issue.meta
-      throw new Error()
+    if issue.status isnt 200
+      console.log "ERROR: issue #{issueNumber} issue.status isnt 200"
+      throw issue
+    expect = "/#{githubUser}/#{githubRepo}/issues/#{issueNumber}"
+    if not issue.data.url.endsWith expect
+      console.log "ERROR: issue moved? '#{issue.data.url}' does not end with '#{expect}'"
+      throw issue
+    issue.data
+  .then (issue) ->
     console.log "Downloading comments for issue #{issueNumber}..."
-    getAllPages github.issues.getCommentsAsync,
-      user: githubUser
+    delays = delays.delay(githubRateDelay)
+    delays.then -> Promise.resolve octokit.paginate 'GET /repos/{owner}/{repo}/issues/{issue_number}/comments',
+      owner: githubUser
       repo: githubRepo
-      number: issue.number
+      issue_number: issue.number
+      per_page: 100
     .then (comments) ->
       console.log "Downloaded #{comments.length} comments for issue #{issue.number}."
       issue: issue
@@ -87,20 +47,24 @@ exports.getIssueAndCommentsAsync = (githubUser, githubRepo, issueNumber) ->
 
 exports.openIssuesAndCommentsAsync = (githubUser, githubRepo, issue_filter = (->true)) ->
   console.log "Downloading open issues..."
-  getAllPages github.issues.repoIssuesAsync,
-    user: githubUser
+  delays = delays.delay(githubRateDelay)
+  delays.then -> Promise.resolve octokit.paginate 'GET /repos/{owner}/{repo}/issues',
+    owner: githubUser
     repo: githubRepo
     state: 'open'
+    per_page: 100
   .filter issue_filter
   .then (issues) ->
     console.log "Downloaded #{issues.length} issues."
     console.log "Downloading comments for all open issues..."
     issues
   .map (issue) ->
-    getAllPages github.issues.getCommentsAsync,
-      user: githubUser
+    delays = delays.delay(githubRateDelay)
+    delays.then -> Promise.resolve octokit.paginate 'GET /repos/{owner}/{repo}/issues/{issue_number}/comments',
+      owner: githubUser
       repo: githubRepo
-      number: issue.number
+      issue_number: issue.number
+      per_page: 100
     .then (comments) ->
       console.log "Downloaded #{comments.length} comments for issue #{issue.number}."
       issue: issue

@@ -11,8 +11,8 @@
     "bluebird": "^3.7.2",
     "coffee-script": "^1.9.2",
     "commander": "^2.20.3",
-    "github": "^0.2.4",
     "node-trello": "^1.1.1",
+    "octokit": "^1.4.0",
     "prettyjson": "^1.1.0",
     "promise-queue": "^2.1.1"
   },
