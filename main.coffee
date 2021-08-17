@@ -75,7 +75,7 @@ labelsP = trello.getLabelsOnBoard program.trelloBoard
     idToName[label.id] = label.name
   nameToId: nameToId
   idToName: idToName
-.then (res) -> require('jsonfile').writeFileSync 'cache_labelsP.json', res ; res
+.then (res) -> require('jsonfile').writeFileSync 'cache_labelsP.json', res, { spaces: 2 } ; res
 #labelsP = Promise.resolve require('jsonfile').readFileSync 'cache_labelsP.json'
 
 # Make sure we break if this is not set
@@ -100,14 +100,14 @@ allCardsP = trello.getCardsOnBoard program.trelloBoard
   .then (comments) ->
     trelloItem.comments = comments
     trelloItem
-.then (res) -> require('jsonfile').writeFileSync 'cache_allCardsP.json', res ; res
+.then (res) -> require('jsonfile').writeFileSync 'cache_allCardsP.json', res, { spaces: 2 } ; res
 #allCardsP = Promise.resolve require('jsonfile').readFileSync 'cache_allCardsP.json'
 
 if program.includePullRequests
   openIssuesAndCommentsP = github.openIssuesAndCommentsAsync program.githubUser, program.githubRepo
 else
   openIssuesAndCommentsP = github.openIssuesAndCommentsAsync program.githubUser, program.githubRepo, (issue) -> not issue.hasOwnProperty 'pull_request'
-openIssuesAndCommentsP.tap (res) -> require('jsonfile').writeFileSync 'cache_openIssuesAndCommentsP.json', res
+openIssuesAndCommentsP.tap (res) -> require('jsonfile').writeFileSync 'cache_openIssuesAndCommentsP.json', res, { spaces: 2 }
 #openIssuesAndCommentsP = Promise.resolve require('jsonfile').readFileSync 'cache_openIssuesAndCommentsP.json'
 
 fullDownloadP = Promise.resolve {}
@@ -131,7 +131,7 @@ fullDownloadP = Promise.resolve {}
       data[number].github = { issueNotFound: true }
   .then -> data
 .then (data) -> (info for number, info of data)
-.then (res) -> require('jsonfile').writeFileSync 'cache_fullDownloadP.json', res ; res
+.then (res) -> require('jsonfile').writeFileSync 'cache_fullDownloadP.json', res, { spaces: 2 } ; res
 #fullDownloadP = Promise.resolve require('jsonfile').readFileSync 'cache_fullDownloadP.json'
 
 
