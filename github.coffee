@@ -26,8 +26,10 @@ exports.getIssueAndCommentsAsync = (githubUser, githubRepo, issueNumber) ->
       console.log "ERROR: issue #{issueNumber} issue.status isnt 200"
       throw issue
     expect = "/#{githubUser}/#{githubRepo}/issues/#{issueNumber}"
+    # There's also html_url, but PRs are "pulls" there so we can't expect "issues"
     if not issue.data.url.endsWith expect
       console.log "ERROR: issue moved? '#{issue.data.url}' does not end with '#{expect}'"
+      issue.issueMoved = true
       throw issue
     issue.data
   .then (issue) ->

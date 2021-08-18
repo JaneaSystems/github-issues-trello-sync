@@ -58,7 +58,7 @@ inboxListIdP = trello.findListIdAsync 'Inbox', program.trelloBoard
 
 labelsP = trello.getLabelsOnBoard program.trelloBoard
 .then (labels) ->
-  expectedLabels = keywords.concat ['CLOSED']
+  expectedLabels = keywords.concat ['CLOSED', 'MOVED']
   missingLabels = (keyword for keyword in expectedLabels when not labels.some((label) -> label.name is keyword))
   Promise.map missingLabels, (missingLabel) ->
     # TODO: Should respect program.commit
@@ -128,7 +128,12 @@ fullDownloadP = Promise.resolve {}
       data[number].github = githubItem
     .catch (e) ->
       console.log "ERROR GETTING ISSUE, marking as not found, received:", (JSON.stringify e, null, 2)
-      data[number].github = { issueNotFound: true }
+      if e.issueMoved is true
+        data[number].github =
+          issueMoved: true
+          html_url: e.data.html_url
+      else
+        data[number].github = { issueNotFound: true }
   .then -> data
 .then (data) -> (info for number, info of data)
 .then (res) -> require('jsonfile').writeFileSync 'cache_fullDownloadP.json', res, { spaces: 2 } ; res
@@ -142,6 +147,13 @@ checkIssuesP = fullDownloadP
 .filter (issue) -> !issue.github.issueNotFound
 .tap (issues) -> console.log "After filtering not found issues: #{issues.length}"
 .each (issue) ->
+  if issue.github.issueMoved is true
+    issue.newLabels = ['MOVED']
+    issue.updateDesc = true
+    issue.parsed =
+      title: issue.trello.card.name
+      desc: "MOVED TO: #{issue.github.html_url}\n#{issue.trello.card.desc}"
+    return
   issue.parsed = textgen.parseFullIssue(program.githubUser, program.githubRepo, keywords, program.warn)(issue.github)
   if issue.trello
     # Possible update
