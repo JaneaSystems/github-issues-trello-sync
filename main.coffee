@@ -152,7 +152,7 @@ checkIssuesP = fullDownloadP
     issue.updateDesc = true
     issue.parsed =
       title: issue.trello.card.name
-      desc: "MOVED TO: #{issue.github.html_url}\n#{issue.trello.card.desc}"
+      desc: "MOVED TO: #{issue.github.html_url}, #{issue.trello.card.desc}"
     return
   issue.parsed = textgen.parseFullIssue(program.githubUser, program.githubRepo, keywords, program.warn)(issue.github)
   if issue.trello
