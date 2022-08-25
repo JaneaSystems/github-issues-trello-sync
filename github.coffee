@@ -1,6 +1,8 @@
 ﻿Promise = require 'bluebird'
 { Octokit } = require 'octokit'
 
+daysToLookBack = 30
+
 githubRateDelay = 200
 delays = Promise.resolve()
 
@@ -55,6 +57,7 @@ exports.openIssuesAndCommentsAsync = (githubUser, githubRepo, issue_filter = (->
     repo: githubRepo
     state: 'open'
     per_page: 100
+    since: (new Date (new Date).getTime() - (daysToLookBack*24*60*60*1000)).toISOString()
   .filter issue_filter
   .then (issues) ->
     console.log "Downloaded #{issues.length} issues."
